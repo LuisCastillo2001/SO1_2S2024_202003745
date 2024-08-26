@@ -4,4 +4,4 @@ WORKDIR /app
 
 COPY . .
 
-CMD ["python3", "ligera_ram.py"]
+CMD ["python3", "bajo_2.py"]

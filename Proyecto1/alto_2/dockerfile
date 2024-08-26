@@ -10,4 +10,4 @@ COPY  . .
 # Instalar las dependencias
 
 # Comando por defecto para ejecutar la aplicación con Uvicorn
-CMD ["python3", "alto_cpu.py"]
+CMD ["python3", "alto_2.py"]

@@ -6,4 +6,4 @@ COPY . .
 
 RUN pip install "fastapi[standard]"
 
-CMD ["fastapi", "dev" ,"ligera_cpu.py"]
+CMD ["fastapi", "dev" ,"bajo_1.py"]
