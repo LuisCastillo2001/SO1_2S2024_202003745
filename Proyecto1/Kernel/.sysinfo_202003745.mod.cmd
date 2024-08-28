@@ -1,0 +1,1 @@
+savedcmd_/home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Kernel/sysinfo_202003745.mod := printf '%s\n'   sysinfo_202003745.o | awk '!x[$$0]++ { print("/home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Kernel/"$$0) }' > /home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Kernel/sysinfo_202003745.mod

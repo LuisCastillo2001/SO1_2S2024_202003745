@@ -1,0 +1,7 @@
+make # se compila y genera los archivos para instalar
+sudo insmod sysinfo_202003745.ko # instalar el modulo en kernel
+sudo dmesg | tail -n 20 # para ver los logs del kernel
+
+cat /proc/sysinfo_202003745 # imprime lo escrito en el archivo 
+
+sudo rmmod sysinfo_202003745 # desinstalar modulo

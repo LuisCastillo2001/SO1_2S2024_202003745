@@ -25,7 +25,7 @@ static int sysinfo_show(struct seq_file *m, void *v) {
     si_meminfo(&si); // obtiene la informacion de la memoria, y con la función si_meminfo se obtiene la información de la memoria
     int num_parent_processes = 0;
     int num_child_processes = 0;
-
+    
     /*  
         El seq_printf se encarga de escribir en el archivo en /proc
         - m: es el archivo en /pro

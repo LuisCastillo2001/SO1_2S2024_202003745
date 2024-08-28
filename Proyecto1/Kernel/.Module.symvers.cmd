@@ -1,0 +1,1 @@
+savedcmd_/home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Kernel/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Kernel/Module.symvers -T /home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Kernel/modules.order -i Module.symvers -e 
