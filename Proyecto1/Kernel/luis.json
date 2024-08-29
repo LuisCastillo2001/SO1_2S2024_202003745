@@ -1,34 +1,25 @@
 {
-  "Total RAM": 16301380  ,
-  "Free RAM": 12188968  ,
-  "Shared RAM": 2900  ,
-  "processes": [
-      {
-      "id_container": "37488c518f8c",
-      "PID": 5429,
-      "Name": "python3",
-      "Cmdline": "python3 alto_1.py ",
-      "MemoryUsage": 1.34,
-      "CPUUsage": 1787.37
-      },
-      {
-      "id_container": "c3e9c2d92bb8",
-      "PID": 9143,
-      "Name": "fastapi",
-      "Cmdline": "/usr/local/bin/python /usr/local/bin/fastapi dev bajo_1.py ",
-      "MemoryUsage": 0.29,
-      "CPUUsage": 42.07
-      },
-      {
-      "id_container": "47f805c417f6",
-      "PID": 9240,
-      "Name": "fastapi",
-      "Cmdline": "/usr/local/bin/python /usr/local/bin/fastapi dev bajo_1.py ",
-      "MemoryUsage": 0.29,
-      "CPUUsage": 35.58
-      },
-      { 
- "id_container": "000" 
- }
-   ]
- }
+     "Total RAM": 16301356  ,
+     "Free RAM": 12171640  ,
+     "Shared RAM": 2892  ,
+     "processes": [
+         {
+         "id_container": "71fa559c210d",
+         "PID": 5327,
+         "Name": "containerd-shim",
+         "Cmdline": "/usr/local/bin/python /usr/local/bin/fastapi dev bajo_1.py ",
+         "MemoryUsage": 0.32,
+         "CPUUsage": 52.28
+         }
+    ,
+         {
+         "id_container": "caa1c9b1a836",
+         "PID": 6811,
+         "Name": "containerd-shim",
+         "Cmdline": "python3 alto_1.py ",
+         "MemoryUsage": 1.33,
+         "CPUUsage": 8.59
+         }
+    
+      ]
+    }

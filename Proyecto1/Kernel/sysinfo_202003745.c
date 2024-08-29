@@ -88,7 +88,7 @@ static int sysinfo_show(struct seq_file *m, void *v) {
     struct task_struct *task;
     si_meminfo(&si); 
     unsigned long total_jiffies = jiffies;
-    
+    int first_process = 1;
 
     // Inicio del JSON
     seq_printf(m, "{\n");
@@ -101,29 +101,43 @@ static int sysinfo_show(struct seq_file *m, void *v) {
      // Para controlar la coma al inicio de cada objeto
 
     for_each_process(task) {
+        char *cmdline = get_process_cmdline(task);
         
         if (strcmp(task->comm, "containerd-shim") == 0) {
-            char *cmdline = get_process_cmdline(task);
+           
+            
             if (cmdline) {
                 char *container_id = get_container_id(cmdline);
-                if (container_id) {
-                    
+                if (strcmp(container_id, "46138ed5257b") != 0) {
+                    if (!first_process) {
+                        seq_printf(m, ",\n");
+                    } else {
+                        first_process = 0;
+                    }
 
                     // JSON del proceso containerd-shim
                     seq_printf(m, "     {\n");
                     seq_printf(m, "     \"id_container\": \"%s\",\n", container_id);
                     seq_printf(m, "     \"PID\": %d,\n", task->pid);
+                    seq_printf(m, "     \"Name\": \"%s\",\n", task->comm);
+                    
                     //seq_printf(m, "      \"Nombre\": \"%s\",\n", task->comm);
 
                     // Liberar la memoria asignada
                     kfree(container_id);
+                }else{
+                    kfree(cmdline);
+                    kfree(container_id);
+                    continue;
+                    
                 }
                 kfree(cmdline);
             }
+            
         }
 
         if (strcmp(task->comm, "python3") == 0 || strcmp(task->comm, "fastapi") == 0) {
-             unsigned long vsz = 0;
+            unsigned long vsz = 0;
             unsigned long rss = 0;
             unsigned long totalram = si.totalram * 4;
             unsigned long mem_usage = 0;
@@ -150,14 +164,18 @@ static int sysinfo_show(struct seq_file *m, void *v) {
             cpu_usage = (total_time * 10000) / total_jiffies;
             cmdline = get_process_cmdline(task);
 
+            if (strcmp(cmdline, "/usr/local/bin/python /usr/local/bin/fastapi run main.py --port 5000 ") == 0){
+                kfree(cmdline);
+                continue;
+            }
            
 
            
-            seq_printf(m, "     \"Name\": \"%s\",\n", task->comm);
+            
             seq_printf(m, "     \"Cmdline\": \"%s\",\n", cmdline ? cmdline : "N/A");
             seq_printf(m, "     \"MemoryUsage\": %lu.%02lu,\n", mem_usage / 100, mem_usage % 100);
             seq_printf(m, "     \"CPUUsage\": %lu.%02lu\n", cpu_usage / 100, cpu_usage % 100);
-            seq_printf(m, "     },\n");
+            seq_printf(m, "     }\n");
 
 
             // Liberamos la memoria de la línea de comandos
@@ -167,13 +185,16 @@ static int sysinfo_show(struct seq_file *m, void *v) {
         }
     }
 
-    seq_printf(m, "     { \n\"id_container\": \"000\" \n}");
+    //seq_printf(m, "     { \n\"id_container\": \"000\" \n}");
 
     // Fin del JSON
     seq_printf(m, "\n  ]\n}\n");
 
     return 0;
 }
+
+
+ 
 
 
 
