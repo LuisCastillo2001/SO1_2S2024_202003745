@@ -108,7 +108,7 @@ static int sysinfo_show(struct seq_file *m, void *v) {
             
             if (cmdline) {
                 char *container_id = get_container_id(cmdline);
-                if (strcmp(container_id, "46138ed5257b") != 0) {
+                
                     if (!first_process) {
                         seq_printf(m, ",\n");
                     } else {
@@ -125,12 +125,8 @@ static int sysinfo_show(struct seq_file *m, void *v) {
 
                     // Liberar la memoria asignada
                     kfree(container_id);
-                }else{
-                    kfree(cmdline);
-                    kfree(container_id);
-                    continue;
-                    
-                }
+                
+                 
                 kfree(cmdline);
             }
             
@@ -154,20 +150,12 @@ static int sysinfo_show(struct seq_file *m, void *v) {
                 mem_usage = (rss * 10000) / totalram;
             }
 
-            /* 
-                Obtenemos el tiempo total de CPU de un proceso
-                Obtenemos el tiempo total de CPU de todos los procesos
-                Obtenemos el uso de CPU en porcentaje
-                Obtenemos la línea de comandos de un proceso
-            */
+           
             unsigned long total_time = task->utime + task->stime;
             cpu_usage = (total_time * 10000) / total_jiffies;
             cmdline = get_process_cmdline(task);
 
-            if (strcmp(cmdline, "/usr/local/bin/python /usr/local/bin/fastapi run main.py --port 5000 ") == 0){
-                kfree(cmdline);
-                continue;
-            }
+            
            
 
            

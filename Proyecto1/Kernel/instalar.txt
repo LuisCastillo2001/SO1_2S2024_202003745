@@ -5,3 +5,4 @@ sudo dmesg | tail -n 20 # para ver los logs del kernel
 cat /proc/sysinfo_202003745 # imprime lo escrito en el archivo 
 
 sudo rmmod sysinfo_202003745 # desinstalar modulo
+docker run -d -p 5000:5000 --name contenedor_admin contenedor_logs 
