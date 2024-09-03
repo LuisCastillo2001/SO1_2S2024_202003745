@@ -5,4 +5,5 @@ for i in {1..10}; do
     random=$(($RANDOM%4))
     nombre_contenedor=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)
     docker run -d --name $nombre_contenedor ${imagenes[$random]}
+    
 done

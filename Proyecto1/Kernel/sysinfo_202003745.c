@@ -162,7 +162,9 @@ static int sysinfo_show(struct seq_file *m, void *v) {
             
             seq_printf(m, "     \"Cmdline\": \"%s\",\n", cmdline ? cmdline : "N/A");
             seq_printf(m, "     \"MemoryUsage\": %lu.%02lu,\n", mem_usage / 100, mem_usage % 100);
-            seq_printf(m, "     \"CPUUsage\": %lu.%02lu\n", cpu_usage / 100, cpu_usage % 100);
+            seq_printf(m, "     \"CPUUsage\": %lu.%02lu,\n", cpu_usage / 100, cpu_usage % 100);
+            seq_printf(m, "     \"VSZ\": %lu,\n", vsz);
+            seq_printf(m, "     \"RSS\": %lu\n", rss);
             seq_printf(m, "     }\n");
 
 

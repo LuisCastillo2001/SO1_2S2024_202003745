@@ -3,16 +3,23 @@ use std::io::{self, Read};
 use std::path::Path;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-
-
+use chrono::Utc;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use ctrlc;
 #[derive(Debug, Serialize, Deserialize)]
 struct SystemInfo {
+    #[serde(rename = "Total RAM")]
+    total_ram: u64,
+    #[serde(rename = "Free RAM")]
+    free_ram: u64,
+    #[serde(rename = "Shared RAM")]
+    shared_ram: u64,
     #[serde(rename = "processes")]
-    processes: Vec<Process>
+    processes: Vec<Process>,
 }
 
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 struct Process {
     #[serde(rename = "PID")]
     pid: u32,
@@ -26,15 +33,23 @@ struct Process {
     memory_usage: f64,
     #[serde(rename = "CPUUsage")]
     cpu_usage: f64,
+    #[serde(rename = "VSZ")]
+    vsz: f64,
+    #[serde(rename = "RSS")]
+    rss: f64,
 }
 
 #[derive(Debug, Serialize, Clone)]
 struct LogProcess {
     pid: u32,
-    id_container: String,
+    container_id: String,
     name: String,
+    vsz: f64,
+    rss: f64,
     memory_usage: f64,
     cpu_usage: f64,
+    action: String,
+    timestamp: String,
 }
 
 impl Process {
@@ -54,11 +69,16 @@ impl Process {
 
 impl Eq for Process {}  
 
-
 impl Ord for Process {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        
         self.cpu_usage.partial_cmp(&other.cpu_usage).unwrap_or(std::cmp::Ordering::Equal)
+            
             .then_with(|| self.memory_usage.partial_cmp(&other.memory_usage).unwrap_or(std::cmp::Ordering::Equal))
+            
+            .then_with(|| self.vsz.partial_cmp(&other.vsz).unwrap_or(std::cmp::Ordering::Equal))
+           
+            .then_with(|| self.rss.partial_cmp(&other.rss).unwrap_or(std::cmp::Ordering::Equal))
     }
 }
 
@@ -85,7 +105,10 @@ fn kill_container(id: &str) -> std::process::Output {
 
 fn analyzer( system_info:  SystemInfo) {
 
-
+    println!("Total RAM: {} KB", system_info.total_ram);
+    println!("Free RAM: {} KB", system_info.free_ram);
+    println!("Shared RAM: {} KB", system_info.shared_ram);
+    println!("------------------------------");
     
     let mut log_proc_list: Vec<LogProcess> = Vec::new();
 
@@ -122,22 +145,38 @@ fn analyzer( system_info:  SystemInfo) {
     //let (lowest_list, highest_list) = processes_list.split_at(processes_list.len() / 2);
 
 
-   
-    let (lowest_list, highest_list) = processes_list.split_at(processes_list.len() / 2);
+    let mid = processes_list.len() / 2;
+    let (mut lowest_list, mut highest_list) = processes_list.split_at_mut(mid);
+
+    // Convertir los slices a vectores para manipulación
+    let mut lowest_list = lowest_list.to_vec();
+    let mut highest_list = highest_list.to_vec();
+
+    // Si lowest_list tiene menos de 3 elementos, movemos el primer elemento de highest_list a lowest_list
+    if lowest_list.len() < 3 && !highest_list.is_empty() {
+        // Mover el primer elemento de highest_list a lowest_list
+        let element_to_move = highest_list.remove(0);
+        lowest_list.push(element_to_move);
+        
+        // Reordenar las listas después de la modificación
+        lowest_list.sort();
+        highest_list.sort();
+    }
+
 
     
     
     
     println!("Bajo consumo");
-    for process in lowest_list {
-        println!("PID: {}, Name: {}, container ID: {}, Memory Usage: {}, CPU Usage: {}", process.pid, process.name, process.id_container, process.memory_usage, process.cpu_usage);
+    for process in &lowest_list {
+        println!("PID: {}, Name: {}, container ID: {}, Memory Usage: {}, CPU Usage: {}, VSZ: {}, RSS: {}", process.pid, process.name, process.id_container, process.memory_usage, process.cpu_usage, process.vsz, process.rss);
     }
 
     println!("------------------------------");
 
     println!("Alto consumo");
-    for process in highest_list {
-        println!("PID: {}, Name: {}, Icontainer ID {}, Memory Usage: {}, CPU Usage: {}", process.pid, process.name,process.id_container,process.memory_usage, process.cpu_usage);
+    for process in &highest_list {
+        println!("PID: {}, Name: {}, container ID: {}, Memory Usage: {}, CPU Usage: {}, VSZ: {}, RSS: {}", process.pid, process.name, process.id_container, process.memory_usage, process.cpu_usage, process.vsz, process.rss);
     }
 
     println!("------------------------------");
@@ -156,16 +195,20 @@ fn analyzer( system_info:  SystemInfo) {
         for process in lowest_list.iter().skip(3) {
             let log_process = LogProcess {
                 pid: process.pid,
-                id_container: process.id_container.to_string(),
+                container_id: process.id_container.to_string(),
                 name: process.name.clone(),
+                vsz: process.vsz,
+                rss: process.rss,
                 memory_usage: process.memory_usage,
                 cpu_usage: process.cpu_usage,
+                action: "Killed".to_string(),
+                timestamp: Utc::now().to_rfc3339(),
             };
     
             log_proc_list.push(log_process.clone());
 
             // Matamos el contenedor.
-            //let _output = kill_container(&process.id_container);
+            let _output = kill_container(&process.id_container);
 
         }
     } 
@@ -183,22 +226,47 @@ fn analyzer( system_info:  SystemInfo) {
         for process in highest_list.iter().take(highest_list.len() - 2) {
             let log_process = LogProcess {
                 pid: process.pid,
-                id_container: process.id_container.to_string(),
+                container_id: process.id_container.to_string(),
                 name: process.name.clone(),
+                vsz: process.vsz,
+                rss: process.rss,
                 memory_usage: process.memory_usage,
-                cpu_usage: process.cpu_usage
+                cpu_usage: process.cpu_usage,
+                action: "Killed".to_string(),
+                timestamp: Utc::now().to_rfc3339(),
             };
-    
             log_proc_list.push(log_process.clone());
 
             // Matamos el contenedor.
-            //let _output = kill_container(&process.id_container);
+            let _output = kill_container(&process.id_container);
 
         }
     }
 
     // TODO: ENVIAR LOGS AL CONTENEDOR REGISTRO
+    let file_path = "process_logs.json";
+    let file = File::create(file_path).expect("Failed to create file");
+    let writer = io::BufWriter::new(file);
 
+    // Serializar la lista de logs a JSON y escribir en el archivo
+    serde_json::to_writer_pretty(writer, &log_proc_list).expect("Failed to write JSON to file");
+
+    println!("Logs de procesos guardados en '{}'", file_path);
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(format!(
+            "curl -X POST http://localhost:5000/logs -H 'Content-Type: application/json' -d @{}",
+            file_path
+        ))
+        .output()
+        .expect("Failed to execute curl command");
+
+    if output.status.success() {
+        println!("Logs enviados exitosamente a la API.");
+    } else {
+        eprintln!("Error al enviar logs: {:?}", output.stderr);
+    }
+  
     // Hacemos un print de los contenedores que matamos.
     /*
     println!("Contenedores matados");
@@ -208,6 +276,8 @@ fn analyzer( system_info:  SystemInfo) {
         */
 
     println!("------------------------------");
+
+    //Aqui mandar los el proc_list al log de python
 
     
 }
@@ -271,39 +341,45 @@ fn parse_proc_to_struct(json_str: &str) -> Result<SystemInfo, serde_json::Error>
 
 fn main() {
     
+    let terminating = Arc::new(AtomicBool::new(false));
+    let terminating_clone = terminating.clone();
 
- 
+    
+    ctrlc::set_handler(move || {
+        terminating_clone.store(true, Ordering::SeqCst);
+    }).expect("Error setting Ctrl-C handler");
+
     execute_docker_compose();
-    
-    // Continuar con el flujo normal del programa
-    // TODO: antes de iniciar el loop, ejecutar el docker-compose.yml y obtener el id del contenedor registro.
-    
-    // TODO: Utilizar algo para capturar la señal de terminación y matar el contenedor registro y cronjob.
-    // TODO: antes de iniciar el loop, ejecutar el docker-compose.yml y obtener el id del contenedor registro.
 
-    // TODO: Utilizar algo para capturar la señal de terminación y matar el contenedor registro y cronjob.
+    
 
     loop {
-        
-        // Creamos una estructura de datos SystemInfo con un vector de procesos vacío.
+        if terminating.load(Ordering::SeqCst) {
+            println!("Terminando el programa...");
+            break;
+        }
+
+       
         let system_info: Result<SystemInfo, _>;
 
-        // Leemos el contenido del archivo proc y lo guardamos en la variable json_str.
+        
         let json_str = read_proc_file("sysinfo_202003745").unwrap();
 
-        // Deserializamos el contenido del archivo proc a un SystemInfo.
+        
         system_info = parse_proc_to_struct(&json_str);
 
-        // Dependiendo de si se pudo deserializar el contenido del archivo proc o no, se ejecuta una u otra rama.
+       
         match system_info {
-            Ok( info) => {
+            Ok(info) => {
                 analyzer(info);
             }
             Err(e) => println!("Failed to parse JSON: {}", e),
         }
 
-        // Dormimos el hilo principal por 10 segundos.
+        
         std::thread::sleep(std::time::Duration::from_secs(10));
     }
 
-}
+    
+    println!("Programa terminado.");
+} 
