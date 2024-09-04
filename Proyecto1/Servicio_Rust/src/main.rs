@@ -4,9 +4,11 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use chrono::Utc;
-use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 use std::sync::atomic::{AtomicBool, Ordering};
-use ctrlc;
+use std::sync::Arc;
+use serde_json::json;
 #[derive(Debug, Serialize, Deserialize)]
 struct SystemInfo {
     #[serde(rename = "Total RAM")]
@@ -117,27 +119,7 @@ fn analyzer( system_info:  SystemInfo) {
     let mut processes_list: Vec<Process> = system_info.processes;
 
 
-    /* 
-        Cuando llamas a la función sort en un vector de Process, se ejecutarán los traits 
-        Ord y PartialOrd en el siguiente orden y con la siguiente funcionalidad:
-
-
-        La función sort del vector llama internamente a partial_cmp para comparar los elementos.
-        partial_cmp delega la comparación a cmp del trait Ord.
-
-
-        Comparación con cmp:
-
-        cmp compara primero el uso de CPU (cpu_usage).
-        Si el uso de CPU es igual, compara el uso de memoria (memory_usage).
-        Si ambos son iguales, devuelve Ordering::Equal.
-        Funcionalidad de los Traits
-        PartialOrd: Permite la comparación parcial, necesaria para manejar casos donde los valores pueden ser NaN.
-        Ord: Proporciona una comparación total, necesaria para ordenar completamente los elementos del vector.
-
-        Cuando llamas a processes_list.sort(), el método sort usará partial_cmp y cmp para comparar y 
-        ordenar los procesos en el vector processes_list basándose en el uso de CPU y memoria.
-    */
+    
     
     
     processes_list.retain(|process| process.cmd_line != "/usr/local/bin/python /usr/local/bin/fastapi run main.py --port 5000 ");
@@ -146,11 +128,10 @@ fn analyzer( system_info:  SystemInfo) {
 
 
     let mid = processes_list.len() / 2;
-    let (mut lowest_list, mut highest_list) = processes_list.split_at_mut(mid);
-
-    // Convertir los slices a vectores para manipulación
-    let mut lowest_list = lowest_list.to_vec();
-    let mut highest_list = highest_list.to_vec();
+    let (lowest_slice, highest_slice) = processes_list.split_at(mid);
+    let mut lowest_list = lowest_slice.to_vec();
+    let mut highest_list = highest_slice.to_vec();
+    
 
     // Si lowest_list tiene menos de 3 elementos, movemos el primer elemento de highest_list a lowest_list
     if lowest_list.len() < 3 && !highest_list.is_empty() {
@@ -179,6 +160,8 @@ fn analyzer( system_info:  SystemInfo) {
         println!("PID: {}, Name: {}, container ID: {}, Memory Usage: {}, CPU Usage: {}, VSZ: {}, RSS: {}", process.pid, process.name, process.id_container, process.memory_usage, process.cpu_usage, process.vsz, process.rss);
     }
 
+    
+
     println!("------------------------------");
 
     /* 
@@ -191,7 +174,7 @@ fn analyzer( system_info:  SystemInfo) {
     */
 
     if lowest_list.len() > 3 {
-        // Iteramos sobre los procesos en la lista de bajo consumo.
+        
         for process in lowest_list.iter().skip(3) {
             let log_process = LogProcess {
                 pid: process.pid,
@@ -207,7 +190,7 @@ fn analyzer( system_info:  SystemInfo) {
     
             log_proc_list.push(log_process.clone());
 
-            // Matamos el contenedor.
+           
             let _output = kill_container(&process.id_container);
 
         }
@@ -237,26 +220,28 @@ fn analyzer( system_info:  SystemInfo) {
             };
             log_proc_list.push(log_process.clone());
 
-            // Matamos el contenedor.
+            
             let _output = kill_container(&process.id_container);
 
         }
     }
 
-    // TODO: ENVIAR LOGS AL CONTENEDOR REGISTRO
-    let file_path = "process_logs.json";
-    let file = File::create(file_path).expect("Failed to create file");
-    let writer = io::BufWriter::new(file);
+    
 
-    // Serializar la lista de logs a JSON y escribir en el archivo
-    serde_json::to_writer_pretty(writer, &log_proc_list).expect("Failed to write JSON to file");
+    let logs_json = match serde_json::to_string(&log_proc_list) {
+        Ok(json) => json,
+        Err(e) => {
+            eprintln!("Error converting logs to JSON: {}", e);
+            return;
+        }
+    };
 
-    println!("Logs de procesos guardados en '{}'", file_path);
+    
     let output = std::process::Command::new("sh")
         .arg("-c")
         .arg(format!(
-            "curl -X POST http://localhost:5000/logs -H 'Content-Type: application/json' -d @{}",
-            file_path
+            "curl -X POST http://localhost:5000/logs -H 'Content-Type: application/json' -d '{}'",
+            logs_json
         ))
         .output()
         .expect("Failed to execute curl command");
@@ -267,26 +252,45 @@ fn analyzer( system_info:  SystemInfo) {
         eprintln!("Error al enviar logs: {:?}", output.stderr);
     }
   
-    // Hacemos un print de los contenedores que matamos.
-    /*
+    
+    
     println!("Contenedores matados");
     for process in log_proc_list {
-        println!("PID: {}, Name: {}, Container ID: {}, Memory Usage: {}, CPU Usage: {} \n", process.pid, process.name, process.id_container,  process.memory_usage, process.cpu_usage);
+        println!("PID: {}, Name: {}, Container ID: {}, Memory Usage: {}, CPU Usage: {} \n", process.pid, process.name, process.container_id,  process.memory_usage, process.cpu_usage);
     }
-        */
+        
 
     println!("------------------------------");
 
-    //Aqui mandar los el proc_list al log de python
+    
 
     
 }
+
+fn eliminar_docker_compose() {
+    let output = Command::new("sudo")
+        .arg("docker")
+        .arg("rm")
+        .arg("-f") // Forzar eliminación del contenedor
+        .arg("python_container")
+        .output()
+        .expect("Failed to execute process");
+
+    if output.status.success() {
+        println!("Contenedor 'python_container' eliminado con éxito.");
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        println!("Error al eliminar el contenedor: {}", stderr);
+    }
+    
+}
+
 fn execute_docker_compose() {
     let output = Command::new("docker-compose")
         .arg("-f")
         .arg("/home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/logs_python/docker-compose.yml")
         .arg("up")
-        .arg("-d")  // Levanta los servicios en modo "desprendido" (background)
+        .arg("-d") 
         .output()
         .expect("failed to execute docker-compose");
 
@@ -295,91 +299,113 @@ fn execute_docker_compose() {
     } else {
         eprintln!("Error ejecutando docker-compose: {:?}", output.stderr);
     }
+    thread::sleep(Duration::from_secs(4));
 }
 
-/*  
-    Función para leer el archivo proc
-    - file_name: El nombre del archivo que se quiere leer.
-    - Regresa un Result<String> que puede ser un error o el contenido del archivo.
-*/
+
 fn read_proc_file(file_name: &str) -> io::Result<String> {
-    // Se crea un Path con el nombre del archivo que se quiere leer.
+  
     let path  = Path::new("/proc").join(file_name);
 
-    /* 
-        Se abre el archivo en modo lectura y se guarda en la variable file.
-        En caso de que haya un error al abrir el archivo, se regresa un error.
-        El signo de interrogación es un atajo para regresar un error en caso de que haya uno.
-    */
+   
     let mut file = File::open(path)?;
 
-    // Se crea una variable mutable content que se inicializa con un String vacío.
+    
     let mut content = String::new();
 
-    // Se lee el contenido del archivo y se guarda en la variable content.
+    
     file.read_to_string(&mut content)?;
 
 
-    // Se regresa el contenido del archivo.
+    
     Ok(content)
 }
 
-/* 
-    Función para deserializar el contenido del archivo proc a un vector de procesos.
-    - json_str: El contenido del archivo proc en formato JSON.
-    - Regresa un Result<> que puede ser un error o un SystemInfo.
-*/
+
 fn parse_proc_to_struct(json_str: &str) -> Result<SystemInfo, serde_json::Error> {
-    // Se deserializa el contenido del archivo proc a un SystemInfo.
+   
     let system_info: SystemInfo = serde_json::from_str(json_str)?;
 
-    // Se regresa el SystemInfo.
+   
     Ok(system_info)
 }
 
 
+fn send_memory_data(system_info: &SystemInfo) {
+    let memory_json = match serde_json::to_string(&json!({
+        "total_ram": system_info.total_ram,
+        "free_ram": system_info.free_ram,
+        "shared_ram": system_info.shared_ram,
+    })) {
+        Ok(json) => json,
+        Err(e) => {
+            eprintln!("Error converting memory data to JSON: {}", e);
+            return;
+        }
+    };
+
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(format!(
+            "curl -X POST http://localhost:5000/memory -H 'Content-Type: application/json' -d '{}'",
+            memory_json
+        ))
+        .output()
+        .expect("Failed to execute curl command");
+
+    
+}
+
+fn generar_grafica() {
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg("curl -X GET http://localhost:5000/graficar")
+        .output()
+        .expect("Failed to execute curl command");
+
+    if output.status.success() {
+        println!("La solicitud para generar gráficos se realizó exitosamente.");
+    } else {
+        eprintln!("Error al realizar la solicitud para generar gráficos: {:?}", output.stderr);
+    }
+}
 
 fn main() {
-    
-    let terminating = Arc::new(AtomicBool::new(false));
-    let terminating_clone = terminating.clone();
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
 
     
     ctrlc::set_handler(move || {
-        terminating_clone.store(true, Ordering::SeqCst);
+        generar_grafica();
+        eliminar_docker_compose();
+        
+        println!("Deteniendo el servicio de Rust");
+        r.store(false, Ordering::SeqCst);
     }).expect("Error setting Ctrl-C handler");
 
     execute_docker_compose();
 
-    
-
-    loop {
-        if terminating.load(Ordering::SeqCst) {
-            println!("Terminando el programa...");
-            break;
-        }
-
-       
-        let system_info: Result<SystemInfo, _>;
-
-        
-        let json_str = read_proc_file("sysinfo_202003745").unwrap();
-
-        
-        system_info = parse_proc_to_struct(&json_str);
-
-       
-        match system_info {
-            Ok(info) => {
-                analyzer(info);
+    while running.load(Ordering::SeqCst) {
+        let json_str = match read_proc_file("sysinfo_202003745") {
+            Ok(content) => content,
+            Err(e) => {
+                eprintln!("Error reading proc file: {}", e);
+                continue; 
             }
-            Err(e) => println!("Failed to parse JSON: {}", e),
-        }
+        };
 
+        let system_info = match parse_proc_to_struct(&json_str) {
+            Ok(info) => info,
+            Err(e) => {
+                eprintln!("Failed to parse JSON: {}", e);
+                continue; 
+            }
+        };
+        // Aqui iria la peticion
+        send_memory_data(&system_info);
+        analyzer(system_info);
+        
         
         std::thread::sleep(std::time::Duration::from_secs(10));
     }
-
-    
-    println!("Programa terminado.");
-} 
+}

@@ -1,0 +1,11 @@
+/home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Servicio_Rust/target/debug/deps/libbitflags-bc6de6c4aa1f6ca8.rmeta: /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/lib.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/iter.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/parser.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/traits.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/public.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/internal.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/external.rs
+
+/home/cluiis/Documentos/SO1_2S2024_202003745/Proyecto1/Servicio_Rust/target/debug/deps/bitflags-bc6de6c4aa1f6ca8.d: /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/lib.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/iter.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/parser.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/traits.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/public.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/internal.rs /home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/external.rs
+
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/lib.rs:
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/iter.rs:
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/parser.rs:
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/traits.rs:
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/public.rs:
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/internal.rs:
+/home/cluiis/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitflags-2.6.0/src/external.rs:

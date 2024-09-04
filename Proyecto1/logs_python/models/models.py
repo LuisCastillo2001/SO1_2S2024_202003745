@@ -11,3 +11,8 @@ class LogProcess(BaseModel):
     cpu_usage: float
     action: str
     timestamp: str
+
+class Memory(BaseModel):
+    total_ram: int
+    free_ram: int
+    shared_ram: int

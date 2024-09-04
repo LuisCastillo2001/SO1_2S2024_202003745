@@ -16,19 +16,19 @@ MODULE_AUTHOR("Luis Castillo");
 MODULE_DESCRIPTION("Modulo para leer informacion de memoria y CPU");
 MODULE_VERSION("1.0");
 
-#define PROC_NAME "sysinfo_202003745" // nombre del archivo en /proc, y así es como se crea la macro
+#define PROC_NAME "sysinfo_202003745" 
 #define MAX_CMDLINE_LENGTH 4096
 #define CONTAINER_ID_LENGTH 12
 static char *get_container_id(const char *cmdline) {
-    char *id_start = strstr(cmdline, "-id "); // Busca la cadena "-id "
+    char *id_start = strstr(cmdline, "-id "); 
     if (id_start) {
-        id_start += 4; // Avanza para saltar "-id "
+        id_start += 4; 
         
-        // Extrae los primeros 12 caracteres
+        
         char *container_id = kmalloc(CONTAINER_ID_LENGTH + 1, GFP_KERNEL);
         if (container_id) {
             strncpy(container_id, id_start, CONTAINER_ID_LENGTH);
-            container_id[CONTAINER_ID_LENGTH] = '\0'; // Termina la cadena
+            container_id[CONTAINER_ID_LENGTH] = '\0';
             return container_id;
         }
     }
@@ -36,7 +36,7 @@ static char *get_container_id(const char *cmdline) {
 }
 
 
-// Función para obtener la línea de comandos de un proceso
+
 static char *get_process_cmdline(struct task_struct *task) {
     struct mm_struct *mm;
     char *cmdline, *p;
@@ -72,7 +72,7 @@ static char *get_process_cmdline(struct task_struct *task) {
 
     cmdline[len] = '\0';
 
-    // Reemplazar caracteres nulos por espacios
+    
     p = cmdline;
     for (i = 0; i < len; i++)
         if (p[i] == '\0')
@@ -98,7 +98,7 @@ static int sysinfo_show(struct seq_file *m, void *v) {
 
 
     seq_printf(m, " \"processes\": [\n");
-     // Para controlar la coma al inicio de cada objeto
+    
 
     for_each_process(task) {
         char *cmdline = get_process_cmdline(task);
@@ -140,13 +140,13 @@ static int sysinfo_show(struct seq_file *m, void *v) {
             unsigned long cpu_usage = 0;
             char *cmdline = NULL;
 
-            // Obtenemos los valores de VSZ y RSS
+            
             if (task->mm) {
-                // Obtenemos el uso de vsz haciendo un shift de PAGE_SHIFT - 10, un PAGE_SHIFT es la cantidad de bits que se necesitan para representar un byte
+               
                 vsz = task->mm->total_vm << (PAGE_SHIFT - 10);
-                // Obtenemos el uso de rss haciendo un shift de PAGE_SHIFT - 10
+              
                 rss = get_mm_rss(task->mm) << (PAGE_SHIFT - 10);
-                // Obtenemos el uso de memoria en porcentaje
+                
                 mem_usage = (rss * 10000) / totalram;
             }
 
@@ -168,16 +168,14 @@ static int sysinfo_show(struct seq_file *m, void *v) {
             seq_printf(m, "     }\n");
 
 
-            // Liberamos la memoria de la línea de comandos
+           
             if (cmdline) {
                 kfree(cmdline);
             }
         }
     }
 
-    //seq_printf(m, "     { \n\"id_container\": \"000\" \n}");
-
-    // Fin del JSON
+    
     seq_printf(m, "\n  ]\n}\n");
 
     return 0;
@@ -191,19 +189,14 @@ static int sysinfo_show(struct seq_file *m, void *v) {
 static int sysinfo_open(struct inode *inode, struct file *file) {
     return single_open(file, sysinfo_show, NULL);
 }
-//single_open: se encarga de abrir el archivo y ejecutar la función sysinfo_show, esta funcion proviene de seq_file.h
+
 
 
 static const struct proc_ops sysinfo_ops = {
     .proc_open = sysinfo_open,
     .proc_read = seq_read,
 };
-/*
-Es una estructura definida en el kernel de Linux que contiene punteros a funciones que implementan las operaciones de archivo para una
- entrada en /proc. Estas funciones manejan operaciones como abrir, leer, escribir y cerrar la entrada en el sistema de archivos /proc.
-*/
-
-//La librería proc incluye las funciones proc_create y remove_proc_entry
+/
 
 static int __init sysinfo_init(void) {
     proc_create(PROC_NAME, 0, NULL, &sysinfo_ops);
@@ -216,5 +209,5 @@ static void __exit sysinfo_exit(void) {
     printk(KERN_INFO "sysinfo module unloaded\n");
 }
 
-module_init(sysinfo_init); // se llama a la función sysinfo_init cuando se carga el módulo
+module_init(sysinfo_init); 
 module_exit(sysinfo_exit);
