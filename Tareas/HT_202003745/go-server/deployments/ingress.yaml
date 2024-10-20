@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mi-app-go-ingress
+  labels:
+    name: mi-app-go-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: 104.196.40.164.nip.io  
+      http:
+        paths:
+          - pathType: Prefix
+            path: /receive  
+            backend:
+              service:
+                name: go-app  
+                port:
+                  number: 80  

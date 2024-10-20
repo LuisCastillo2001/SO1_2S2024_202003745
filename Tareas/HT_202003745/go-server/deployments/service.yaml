@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-app
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080  # Asegúrate de que este sea el puerto correcto de tu aplicación
+  selector:
+    app: go-app  # Asegúrate de que coincida con las etiquetas de tu pod
