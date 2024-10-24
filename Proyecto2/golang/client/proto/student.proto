@@ -1,0 +1,30 @@
+syntax = "proto3";
+option go_package = "./;confproto";
+
+package confproto;
+
+
+service Student {
+    rpc GetStudent(StudentRequest) returns (StudentResponse);
+}
+
+
+
+message StudentRequest {
+    string name = 1;
+    int32 age = 3;
+    string faculty = 2;
+    Discipline discipline = 4;
+}
+
+
+enum Discipline {
+    UNSPECIFIED = 0;
+    swimming = 1;
+    athletics = 2;
+    boxing = 3;
+}
+
+message StudentResponse {
+    string success = 1;
+}
