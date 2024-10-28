@@ -1,5 +1,5 @@
 syntax = "proto3";
-package studentgrpc;
+package confproto;
 
 
 service Student {
@@ -17,7 +17,7 @@ message StudentRequest {
 
 
 enum Discipline {
-    UNSPECIFIED = 0;
+    UNESPECIFIED = 0;
     swimming = 1;
     athletics = 2;
     boxing = 3;

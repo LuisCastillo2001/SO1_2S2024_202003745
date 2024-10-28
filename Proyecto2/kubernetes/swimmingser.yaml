@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-swimmingser-go
+spec:
+  selector:
+    matchLabels:
+      app: grpc-swimmingser-go
+  template:
+    metadata:
+      labels:
+        app: grpc-swimmingser-go
+    spec:
+      containers:
+      - name: grpc-swimmingser-go
+        image: luiscastillo2001/swimming-server:1.1
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "0.3"
+        ports:
+        - containerPort: 50051
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swimming-server #DNS
+spec:
+  selector:
+    app: grpc-swimmingser-go
+  ports:
+    - protocol: TCP
+      port: 50051
+      targetPort: 50051
+  type: ClusterIP

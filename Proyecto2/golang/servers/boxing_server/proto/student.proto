@@ -17,6 +17,7 @@ message StudentRequest {
     Discipline discipline = 4;
 }
 
+
 enum Discipline {
     UNESPECIFIED = 0;
     swimming = 1;

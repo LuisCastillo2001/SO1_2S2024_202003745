@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: student.proto
 
-package studentgrpc
+package confproto
 
 import (
 	context "context"
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Student_GetStudent_FullMethodName = "/studentgrpc.Student/GetStudent"
+	Student_GetStudent_FullMethodName = "/confproto.Student/GetStudent"
 )
 
 // StudentClient is the client API for Student service.
@@ -108,7 +108,7 @@ func _Student_GetStudent_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Student_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "studentgrpc.Student",
+	ServiceName: "confproto.Student",
 	HandlerType: (*StudentServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

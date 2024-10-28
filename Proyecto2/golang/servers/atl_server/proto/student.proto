@@ -1,11 +1,14 @@
 syntax = "proto3";
-option go_package = "./;studentgrpc";
+option go_package = "./;confproto";
 
-package studentgrpc;
+package confproto;
+
 
 service Student {
     rpc GetStudent(StudentRequest) returns (StudentResponse);
 }
+
+
 
 message StudentRequest {
     string name = 1;
@@ -14,8 +17,9 @@ message StudentRequest {
     Discipline discipline = 4;
 }
 
+
 enum Discipline {
-    UNSPECIFIED = 0;
+    UNESPECIFIED = 0;
     swimming = 1;
     athletics = 2;
     boxing = 3;
