@@ -31,8 +31,5 @@ COPY --from=builder /app/go_service .
 # Asegurarse de que el binario tenga permisos de ejecución
 RUN chmod +x /app/go_service
 
-# Exponer el puerto que utilizará el servicio
-EXPOSE 50051
-
 # Comando para ejecutar la aplicación
 CMD ["./go_service"]

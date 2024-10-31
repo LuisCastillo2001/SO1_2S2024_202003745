@@ -1,25 +1,38 @@
-# CONSTRUIT LA VERSION
-FROM golang:1.23-bullseye AS build
+# Usar una imagen base de Go para compilar el servicio
+FROM golang:1.23 as builder
 
-# Directorio de trabajo 
+# Establecer el directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copia el archivo go.mod y go.sum
-COPY go.mod go.sum ./
-
-RUN go mod download
-
+# Copiar el código fuente al contenedor
 COPY . .
 
-RUN go build \
-    -ldflags="-linkmode external -extldflags -static" \
-    -tags netgo \
-    -o main
+# Descargar dependencias
+RUN go mod tidy
 
+# Compilar el servicio
+RUN GOOS=linux GOARCH=amd64 go build -o go_service .
+
+# Verificar que el binario ha sido creado
+RUN ls -l /app/go_service
+
+# Crear una imagen mínima para ejecutar el binario compilado
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+# Instalar dependencias mínimas
+RUN apk add --no-cache libc6-compat
 
-COPY --from=build /app/main /main
+# Establecer el directorio de trabajo en el contenedor
+WORKDIR /app
 
-CMD ["/main"]
+# Copiar el binario compilado desde la fase anterior
+COPY --from=builder /app/go_service .
+
+# Asegurarse de que el binario tenga permisos de ejecución
+RUN chmod +x /app/go_service
+
+# Exponer el puerto que utilizará el servicio
+EXPOSE 50051
+
+# Comando para ejecutar la aplicación
+CMD ["./go_service"]

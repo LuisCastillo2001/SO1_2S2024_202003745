@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use studentgrpc::student_client::StudentClient;
 use studentgrpc::StudentRequest;
+use tokio::task;
+use tokio::sync::oneshot;
 
 pub mod studentgrpc {
     tonic::include_proto!("confproto");
@@ -44,35 +46,52 @@ async fn handle_student(student: web::Json<StudentData>) -> impl Responder {
         }
     };
 
-    let mut client = match StudentClient::connect(format!("http://{}", server_addr)).await {
-        Ok(client) => {
-            println!("Successfully connected to the gRPC server at {}", server_addr);
-            client
-        },
-        Err(e) => {
-            println!("Failed to connect to gRPC server: {}", e);
-            return HttpResponse::InternalServerError().body(format!("Failed to connect to gRPC server: {}", e));
-        }
-    };
+    // Crear un canal para recibir la respuesta del thread
+    let (tx, rx) = oneshot::channel();
 
-    let request = tonic::Request::new(StudentRequest {
-        name: student.name.clone(),
-        age: student.age,
-        faculty: student.faculty.clone(),
-        discipline: student.discipline,
+    // Clonar los datos del estudiante para moverlos al thread
+    let student_data = student.into_inner();
+
+    // Crear un thread para manejar la solicitud gRPC
+    task::spawn(async move {
+        let mut client = match StudentClient::connect(format!("http://{}", server_addr)).await {
+            Ok(client) => {
+                println!("Successfully connected to the gRPC server at {}", server_addr);
+                client
+            },
+            Err(e) => {
+                println!("Failed to connect to gRPC server: {}", e);
+                let _ = tx.send(Err(format!("Failed to connect to gRPC server: {}", e)));
+                return;
+            }
+        };
+
+        let request = tonic::Request::new(StudentRequest {
+            name: student_data.name.clone(),
+            age: student_data.age,
+            faculty: student_data.faculty.clone(),
+            discipline: student_data.discipline,
+        });
+
+        println!("Sending gRPC request: {:?}", request);
+
+        match client.get_student(request).await {
+            Ok(response) => {
+                println!("Received response from gRPC server: {:?}", response);
+                let _ = tx.send(Ok(response));
+            },
+            Err(e) => {
+                println!("gRPC call failed: {}", e);
+                let _ = tx.send(Err(format!("gRPC call failed: {}", e)));
+            }
+        }
     });
 
-    println!("Sending gRPC request: {:?}", request);
-
-    match client.get_student(request).await {
-        Ok(response) => {
-            println!("Received response from gRPC server: {:?}", response);
-            HttpResponse::Ok().json(format!("Student: {:?}", response))
-        },
-        Err(e) => {
-            println!("gRPC call failed: {}", e);
-            HttpResponse::InternalServerError().body(format!("gRPC call failed: {}", e))
-        }
+    // Esperar la respuesta del thread
+    match rx.await {
+        Ok(Ok(response)) => HttpResponse::Ok().json(format!("Student: {:?}", response)),
+        Ok(Err(e)) => HttpResponse::InternalServerError().body(e),
+        Err(_) => HttpResponse::InternalServerError().body("Failed to receive response from thread"),
     }
 }
 
@@ -82,7 +101,6 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .route("/ingenieria", web::post().to(handle_student))
-            .route("/agronomia", web::post().to(handle_student))
     })
     .bind("0.0.0.0:8080")?
     .run()
