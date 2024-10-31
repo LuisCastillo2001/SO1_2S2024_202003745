@@ -1,0 +1,20 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: winners-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 1
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: lossers-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 1

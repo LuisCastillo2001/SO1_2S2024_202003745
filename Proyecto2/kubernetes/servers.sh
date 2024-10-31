@@ -5,7 +5,7 @@ GO_SERVER_BOXING="boxing-server"
 GO_SERVER_ATHLESTIM="atl-server"
 
 DOCKERHUB_USERNAME="luiscastillo2001"
-TAG_SERVERS="1.1"
+TAG_SERVERS="1.8"
 
 # Build the Docker images for servers
 sudo docker build -t $GO_SERVER_SWIMMING ../golang/servers/swimming_server

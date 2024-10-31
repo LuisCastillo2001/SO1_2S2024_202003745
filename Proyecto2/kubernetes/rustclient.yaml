@@ -13,11 +13,14 @@ spec:
     spec:
       containers:
       - name: grpc-client-rust
-        image: luiscastillo2001/rust-client-grpc:6.6
+        image: luiscastillo2001/rust-client-grpc:6.8
         resources:
-          limits:
+          requests:
+            cpu: "100m"
             memory: "128Mi"
-            cpu: "0.3"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
         ports:
         - containerPort: 8080
 ---
@@ -33,3 +36,25 @@ spec:
       port: 8080
       targetPort: 8080
   type: ClusterIP
+
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grpc-client-rust-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grpc-client-rust
+  minReplicas: 1
+  maxReplicas: 15  
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 30  
+

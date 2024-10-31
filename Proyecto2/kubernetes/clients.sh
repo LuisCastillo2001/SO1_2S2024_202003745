@@ -4,7 +4,7 @@ GO_CLIENT_IMAGE="golang-client-grpc"
 RUST_CLIENT_IMAGE="rust-client-grpc"
 
 DOCKERHUB_USERNAME="luiscastillo2001"
-TAG_CLIENTS="6.6"
+TAG_CLIENTS="6.8"
 
 # Build the Docker images for clients
 sudo docker build -t $GO_CLIENT_IMAGE ../golang/client

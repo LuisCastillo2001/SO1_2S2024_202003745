@@ -13,11 +13,14 @@ spec:
     spec:
       containers:
       - name: grpc-swimmingser-go
-        image: luiscastillo2001/swimming-server:1.1
+        image: luiscastillo2001/swimming-server:1.8
         resources:
-          limits:
+          requests:
+            cpu: "100m"
             memory: "128Mi"
-            cpu: "0.3"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
         ports:
         - containerPort: 50051
 ---
@@ -33,3 +36,23 @@ spec:
       port: 50051
       targetPort: 50051
   type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grpc-swimmingser-go-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: grpc-swimmingser-go
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
