@@ -39,7 +39,24 @@ kubectl expose service my-kube-prometheus-stack-grafana --type=NodePort --target
 kubectl patch svc my-kube-prometheus-stack-grafana --namespace default -p '{"spec": {"type": "LoadBalancer"}}'
 password - prom-operator
 
+-- borrar
+kubectl delete -f kafka_topic.yaml
+kubectl exec redis-6b5bcbb6b6-9xp8k -- redis-cli FLUSHALL
+
 35.227.76.159
+
+
+## Para crear el cluster
+
+gcloud container clusters create proyecto2 --num-nodes=4  --tags=allin,allout --machine-type=e2-medium --no-enable-network-policy --disk-size=25GB --disk-type pd-standard
+
+gcloud container clusters create proyecto2 --num-nodes=4  --tags=allin,allout --machine-type=e2-medium --no-enable-network-policy --disk-size=25GB --disk-type pd-standard
+
+region: us-east1
+zone: us-east1-c
+kubectl get pods redis
+
+kubectl patch svc my-kube-prometheus-stack-grafana  --namespace default -p '{"spec": {"type": "LoadBalancer"}}
 
 
 
